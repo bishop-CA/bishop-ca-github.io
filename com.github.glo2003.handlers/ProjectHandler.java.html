@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>ProjectHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TEAM13</a> &gt; <a href="index.source.html" class="el_package">com.github.glo2003.handlers</a> &gt; <span class="el_source">ProjectHandler.java</span></div><h1>ProjectHandler.java</h1><pre class="source lang-java linenums">/**
+ * Copyright (c) 2013 - 2016, Coveo Solutions Inc.
+ */
+package com.github.glo2003.handlers;
+
+import com.github.glo2003.response.Branch;
+import com.github.glo2003.response.Contributor;
+import com.github.glo2003.response.Issue;
+import com.github.glo2003.response.Project;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class ProjectHandler implements Route {
+    public static final int MAX_ISSUES_COUNT = 5;
+    private final String githubToken;
+
+<span class="nc" id="L31">    public ProjectHandler(final String githubToken) {</span>
+<span class="nc" id="L32">        this.githubToken = githubToken;</span>
+<span class="nc" id="L33">    }</span>
+
+    @Override
+    public Object handle(final Request request, final Response response) throws Exception {
+<span class="nc" id="L37">        JSONArray jsonArray = getProjectsJsonArray();</span>
+
+<span class="nc" id="L39">        ArrayList&lt;Project&gt; projects = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        for (int i = 0; i &lt; jsonArray.length(); i++) {</span>
+<span class="nc" id="L42">            JSONObject currentProjectJsonObject = jsonArray.getJSONObject(i);</span>
+<span class="nc" id="L43">            Project project = createProjectFromJsonObject(currentProjectJsonObject);</span>
+<span class="nc" id="L44">            projects.add(project);</span>
+        }
+
+<span class="nc" id="L47">        return projects;</span>
+    }
+
+    private Project createProjectFromJsonObject(final JSONObject jsonObjectProject) throws JSONException, IOException {
+<span class="nc" id="L51">        String id = String.valueOf(jsonObjectProject.get(&quot;id&quot;));</span>
+<span class="nc" id="L52">        String name = (String) jsonObjectProject.get(&quot;name&quot;);</span>
+<span class="nc" id="L53">        List&lt;Contributor&gt; contributors = getContributorsForProject(jsonObjectProject);</span>
+<span class="nc" id="L54">        Map&lt;String, Integer&gt; languages = getLanguagesForProject(jsonObjectProject);</span>
+<span class="nc" id="L55">        List&lt;Branch&gt; branches = getBranchesForProject(jsonObjectProject);</span>
+<span class="nc" id="L56">        List&lt;Issue&gt; issues =  getOpenIssuesForProject(jsonObjectProject);</span>
+<span class="nc" id="L57">        int openIssuesCount = jsonObjectProject.getInt(&quot;open_issues_count&quot;);</span>
+<span class="nc" id="L58">        String htmlUrl = (String) jsonObjectProject.get(&quot;html_url&quot;);</span>
+<span class="nc" id="L59">        List&lt;String&gt; badges = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L60">        badges.add(&quot;one-of-em&quot;);</span>
+<span class="nc" id="L61">        return new Project(id, name, contributors, languages, branches, issues, openIssuesCount, htmlUrl, badges);</span>
+    }
+
+    private List&lt;Issue&gt; getOpenIssuesForProject(final JSONObject jsonObjectProject) throws IOException {
+<span class="nc" id="L65">        String issuesUrl = jsonObjectProject.getString(&quot;issues_url&quot;);</span>
+<span class="nc" id="L66">        int index = issuesUrl.indexOf(&quot;{&quot;);</span>
+<span class="nc" id="L67">        String newUrl = issuesUrl.substring(0, index);</span>
+<span class="nc" id="L68">        String url = newUrl + &quot;?access_token=&quot; + githubToken;</span>
+<span class="nc" id="L69">        URL obj = new URL(url);</span>
+<span class="nc" id="L70">        HttpURLConnection con = (HttpURLConnection) obj.openConnection();</span>
+<span class="nc" id="L71">        con.setRequestMethod(&quot;GET&quot;);</span>
+
+<span class="nc" id="L73">        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(con.getInputStream()));</span>
+<span class="nc" id="L74">        StringBuilder stringBuilder = new StringBuilder();</span>
+        String line;
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        while ((line = bufferedReader.readLine()) != null) {</span>
+<span class="nc" id="L77">            stringBuilder.append(line).append(&quot;\n&quot;);</span>
+        }
+
+<span class="nc" id="L80">        bufferedReader.close();</span>
+
+<span class="nc" id="L82">        String finalString = &quot;{'issues':&quot; + stringBuilder.toString() + &quot;}&quot;;</span>
+<span class="nc" id="L83">        JSONObject jsonObj = new JSONObject(finalString);</span>
+
+<span class="nc" id="L85">        JSONArray jsonArrayIssues = jsonObj.getJSONArray(&quot;issues&quot;);</span>
+
+<span class="nc" id="L87">        List&lt;Issue&gt; issues = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L89" title="All 4 branches missed.">        for (int i = 0; i &lt; jsonArrayIssues.length() &amp;&amp; i &lt; MAX_ISSUES_COUNT; i++) {</span>
+<span class="nc" id="L90">            JSONObject currentIssue = jsonArrayIssues.getJSONObject(i);</span>
+<span class="nc" id="L91">            Issue issue = createIssueFromJson(currentIssue);</span>
+<span class="nc" id="L92">            issues.add(issue);</span>
+        }
+
+<span class="nc" id="L95">        return issues;</span>
+    }
+
+    private Issue createIssueFromJson(final JSONObject currentIssue) {
+<span class="nc" id="L99">        int id = currentIssue.getInt(&quot;id&quot;);</span>
+<span class="nc" id="L100">        String htmlUrl = currentIssue.getString(&quot;html_url&quot;);</span>
+<span class="nc" id="L101">        String title = currentIssue.getString(&quot;title&quot;);</span>
+<span class="nc" id="L102">        int number = currentIssue.getInt(&quot;number&quot;);</span>
+<span class="nc" id="L103">        String state = currentIssue.getString(&quot;state&quot;);</span>
+<span class="nc" id="L104">        String body = currentIssue.getString(&quot;body&quot;);</span>
+
+<span class="nc" id="L106">        return new Issue(id, htmlUrl, title, number, state, body);</span>
+    }
+
+    private List&lt;Contributor&gt; getContributorsForProject(final JSONObject jsonObjectProject) throws IOException {
+<span class="nc" id="L110">        String contributorsUrl = jsonObjectProject.getString(&quot;contributors_url&quot;);</span>
+<span class="nc" id="L111">        String url = contributorsUrl + &quot;?access_token=&quot; + githubToken;</span>
+<span class="nc" id="L112">        URL obj = new URL(url);</span>
+<span class="nc" id="L113">        HttpURLConnection con = (HttpURLConnection) obj.openConnection();</span>
+<span class="nc" id="L114">        con.setRequestMethod(&quot;GET&quot;);</span>
+
+<span class="nc" id="L116">        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(con.getInputStream()));</span>
+<span class="nc" id="L117">        StringBuilder stringBuilder = new StringBuilder();</span>
+        String line;
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        while ((line = bufferedReader.readLine()) != null) {</span>
+<span class="nc" id="L120">            stringBuilder.append(line).append(&quot;\n&quot;);</span>
+        }
+<span class="nc" id="L122">        bufferedReader.close();</span>
+
+<span class="nc" id="L124">        String finalString = &quot;{'contributors':&quot; + stringBuilder.toString() + &quot;}&quot;;</span>
+<span class="nc" id="L125">        JSONObject jsonObj = new JSONObject(finalString);</span>
+
+<span class="nc" id="L127">        JSONArray jsonArrayContributors = jsonObj.getJSONArray(&quot;contributors&quot;);</span>
+
+<span class="nc" id="L129">        List&lt;Contributor&gt; contributors = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        for (int i = 0; i &lt; jsonArrayContributors.length(); i++) {</span>
+<span class="nc" id="L132">            JSONObject currentContributor = jsonArrayContributors.getJSONObject(i);</span>
+<span class="nc" id="L133">            Contributor contributor = createContributorFromJson(currentContributor);</span>
+<span class="nc" id="L134">            contributors.add(contributor);</span>
+        }
+
+<span class="nc" id="L137">        return contributors;</span>
+    }
+
+    private Contributor createContributorFromJson(final JSONObject currentContributor) {
+<span class="nc" id="L141">        String login = currentContributor.getString(&quot;login&quot;);</span>
+<span class="nc" id="L142">        int id = currentContributor.getInt(&quot;id&quot;);</span>
+<span class="nc" id="L143">        String avatarUrl = currentContributor.getString(&quot;avatar_url&quot;);</span>
+<span class="nc" id="L144">        String url = currentContributor.getString(&quot;url&quot;);</span>
+<span class="nc" id="L145">        String htmlUrl = currentContributor.getString(&quot;html_url&quot;);</span>
+<span class="nc" id="L146">        String type = currentContributor.getString(&quot;type&quot;);</span>
+<span class="nc" id="L147">        int contributions = currentContributor.getInt(&quot;contributions&quot;);</span>
+
+
+<span class="nc" id="L150">        return new Contributor(login, id, avatarUrl, url, htmlUrl, type, contributions);</span>
+    }
+
+    private List&lt;Branch&gt; getBranchesForProject(final JSONObject jsonObjectProject) throws IOException, JSONException {
+<span class="nc" id="L154">        String branchesUrl = jsonObjectProject.getString(&quot;branches_url&quot;);</span>
+<span class="nc" id="L155">        int index = branchesUrl.indexOf(&quot;{&quot;);</span>
+<span class="nc" id="L156">        String newUrl = branchesUrl.substring(0, index);</span>
+<span class="nc" id="L157">        String url = newUrl + &quot;?access_token=&quot; + githubToken;</span>
+<span class="nc" id="L158">        URL obj = new URL(url);</span>
+<span class="nc" id="L159">        HttpURLConnection con = (HttpURLConnection) obj.openConnection();</span>
+<span class="nc" id="L160">        con.setRequestMethod(&quot;GET&quot;);</span>
+
+<span class="nc" id="L162">        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(con.getInputStream()));</span>
+<span class="nc" id="L163">        StringBuilder stringBuilder = new StringBuilder();</span>
+        String line;
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        while ((line = bufferedReader.readLine()) != null) {</span>
+<span class="nc" id="L166">            stringBuilder.append(line).append(&quot;\n&quot;);</span>
+        }
+<span class="nc" id="L168">        bufferedReader.close();</span>
+
+<span class="nc" id="L170">        String finalString = &quot;{'branches':&quot; + stringBuilder.toString() + &quot;}&quot;;</span>
+<span class="nc" id="L171">        JSONObject jsonObj = new JSONObject(finalString);</span>
+
+<span class="nc" id="L173">        JSONArray jsonArrayBranches = jsonObj.getJSONArray(&quot;branches&quot;);</span>
+
+<span class="nc" id="L175">        List&lt;Branch&gt; branches = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        for (int i = 0; i &lt; jsonArrayBranches.length(); i++) {</span>
+<span class="nc" id="L178">            JSONObject currentBranch = jsonArrayBranches.getJSONObject(i);</span>
+<span class="nc" id="L179">            Branch branch = createBranchFromJson(currentBranch);</span>
+<span class="nc" id="L180">            branches.add(branch);</span>
+        }
+
+<span class="nc" id="L183">        return branches;</span>
+    }
+
+    private Branch createBranchFromJson(final JSONObject currentBranch) throws JSONException {
+<span class="nc" id="L187">        String name = currentBranch.getString(&quot;name&quot;);</span>
+<span class="nc" id="L188">        JSONObject commit = currentBranch.getJSONObject(&quot;commit&quot;);</span>
+<span class="nc" id="L189">        String sha = commit.getString(&quot;sha&quot;);</span>
+<span class="nc" id="L190">        String url = commit.getString(&quot;url&quot;);</span>
+
+<span class="nc" id="L192">        return new Branch(name, sha, url);</span>
+    }
+
+    private Map&lt;String, Integer&gt; getLanguagesForProject(final JSONObject jsonObjectProject) throws IOException, JSONException {
+<span class="nc" id="L196">        String url = jsonObjectProject.getString(&quot;languages_url&quot;) + &quot;?access_token=&quot; + githubToken;</span>
+<span class="nc" id="L197">        URL obj = new URL(url);</span>
+<span class="nc" id="L198">        HttpURLConnection con = (HttpURLConnection) obj.openConnection();</span>
+<span class="nc" id="L199">        con.setRequestMethod(&quot;GET&quot;);</span>
+
+<span class="nc" id="L201">        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(con.getInputStream()));</span>
+<span class="nc" id="L202">        StringBuilder stringBuilder = new StringBuilder();</span>
+        String line;
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        while ((line = bufferedReader.readLine()) != null) {</span>
+<span class="nc" id="L205">            stringBuilder.append(line).append(&quot;\n&quot;);</span>
+        }
+<span class="nc" id="L207">        bufferedReader.close();</span>
+
+<span class="nc" id="L209">        JSONObject jsonObj = new JSONObject(stringBuilder.toString());</span>
+
+<span class="nc" id="L211">        HashMap&lt;String, Integer&gt; languages = new HashMap&lt;&gt;();</span>
+
+<span class="nc bnc" id="L213" title="All 2 branches missed.">        for (String key : jsonObj.keySet()) {</span>
+<span class="nc" id="L214">            languages.put(key, jsonObj.getInt(key));</span>
+<span class="nc" id="L215">        }</span>
+
+<span class="nc" id="L217">        return languages;</span>
+    }
+
+    private JSONArray getProjectsJsonArray() throws IOException, JSONException {
+<span class="nc" id="L221">        String url = &quot;https://api.github.com/user/repos?access_token=&quot; + githubToken;</span>
+<span class="nc" id="L222">        URL obj = new URL(url);</span>
+<span class="nc" id="L223">        HttpURLConnection con = (HttpURLConnection) obj.openConnection();</span>
+<span class="nc" id="L224">        con.setRequestMethod(&quot;GET&quot;);</span>
+
+<span class="nc" id="L226">        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(con.getInputStream()));</span>
+<span class="nc" id="L227">        StringBuilder stringBuilder = new StringBuilder();</span>
+        String line;
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        while ((line = bufferedReader.readLine()) != null) {</span>
+<span class="nc" id="L230">            stringBuilder.append(line).append(&quot;\n&quot;);</span>
+        }
+<span class="nc" id="L232">        bufferedReader.close();</span>
+
+<span class="nc" id="L234">        String finalString = &quot;{'repositories':&quot; + stringBuilder.toString() + &quot;}&quot;;</span>
+<span class="nc" id="L235">        JSONObject jsonObj = new JSONObject(finalString);</span>
+
+<span class="nc" id="L237">        return jsonObj.getJSONArray(&quot;repositories&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.1.201405082137</span></div></body></html>
