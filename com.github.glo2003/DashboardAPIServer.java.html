@@ -46,15 +46,18 @@ public class DashboardAPIServer {
 
 <span class="nc" id="L47">        get(&quot;/projects&quot;, new ProjectHandler(githubToken), jsonObjectMapper::writeValueAsString);</span>
 
-<span class="nc" id="L49">        options(&quot;/projects&quot;, new ProjectHandler(githubToken), jsonObjectMapper::writeValueAsString);</span>
-<span class="nc" id="L50">    }</span>
+<span class="nc" id="L49">        options(&quot;/projects&quot;, (req, res) -&gt; {</span>
+            res.status(200);
+            return null;
+        });
+<span class="nc" id="L53">    }</span>
 
     private static void enableCORS() {
-<span class="nc" id="L53">        before((request, response) -&gt; {</span>
+<span class="nc" id="L56">        before((request, response) -&gt; {</span>
             response.header(&quot;Access-Control-Allow-Origin&quot;, &quot;*&quot;);
             response.header(&quot;Access-Control-Allow-Headers&quot;, &quot;Origin, X-Requested-With, Content-Type, Accept&quot;);
             response.header(&quot;Access-Control-Request-Method&quot;, &quot;GET,PUT,POST,DELETE,OPTIONS&quot;);
         });
-<span class="nc" id="L58">    }</span>
+<span class="nc" id="L61">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.1.201405082137</span></div></body></html>
