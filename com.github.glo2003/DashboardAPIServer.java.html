@@ -5,14 +5,14 @@ import com.github.glo2003.handlers.ProjectHandler;
 import javaslang.control.Option;
 import javaslang.control.Try;
 
-import static spark.Spark.before;
 import static spark.Spark.get;
 import static spark.Spark.options;
 import static spark.Spark.port;
+import static spark.Spark.before;
 
 
 public class DashboardAPIServer {
-    public static final int PORT = 1357;
+    private static final int PORT = 1357;
 <span class="nc" id="L16">    private static ObjectMapper jsonObjectMapper = new ObjectMapper();</span>
 
 <span class="nc" id="L18">    public DashboardAPIServer() {</span>
