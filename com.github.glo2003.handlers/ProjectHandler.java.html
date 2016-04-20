@@ -106,7 +106,7 @@ public class ProjectHandler implements Route {
 <span class="nc" id="L106">        return new Issue(id, htmlUrl, title, number, state, body);</span>
     }
 
-    private List&lt;Contributor&gt; getContributorsForProject(final JSONObject jsonObjectProject) throws IOException {
+    protected List&lt;Contributor&gt; getContributorsForProject(final JSONObject jsonObjectProject) throws IOException {
 <span class="nc" id="L110">        String contributorsUrl = jsonObjectProject.getString(&quot;contributors_url&quot;);</span>
 <span class="nc" id="L111">        String url = contributorsUrl + &quot;?access_token=&quot; + githubToken;</span>
 <span class="nc" id="L112">        URL obj = new URL(url);</span>
