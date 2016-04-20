@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>IssueHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">TEAM13</a> &gt; <a href="index.source.html" class="el_package">com.github.glo2003.handlers</a> &gt; <span class="el_source">IssueHandler.java</span></div><h1>IssueHandler.java</h1><pre class="source lang-java linenums">package com.github.glo2003.handlers;
+
+import com.github.glo2003.response.Issue;
+import com.github.glo2003.response.OnlyIssueProject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import spark.Request;
+import spark.Response;
+import spark.Route;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class IssueHandler extends ProjectHandler implements Route {
+    public IssueHandler(final String githubToken) {
+<span class="nc" id="L18">        super(githubToken);</span>
+<span class="nc" id="L19">    }</span>
+
+    @Override
+    public Object handle(final Request request, final Response response) throws Exception {
+<span class="nc" id="L23">        JSONArray jsonArray = getProjectsJsonArray();</span>
+
+<span class="nc" id="L25">        ArrayList&lt;OnlyIssueProject&gt; projects = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        for (int i = 0; i &lt; jsonArray.length(); i++) {</span>
+<span class="nc" id="L28">            JSONObject currentProjectJsonObject = jsonArray.getJSONObject(i);</span>
+<span class="nc" id="L29">            OnlyIssueProject project = createOnlyIssueProjectFromJsonObject(currentProjectJsonObject);</span>
+<span class="nc" id="L30">            projects.add(project);</span>
+        }
+
+<span class="nc" id="L33">        return projects;</span>
+    }
+
+    protected OnlyIssueProject createOnlyIssueProjectFromJsonObject(final JSONObject jsonObjectProject) throws JSONException, IOException {
+<span class="nc" id="L37">        String id = String.valueOf(jsonObjectProject.get(&quot;id&quot;));</span>
+<span class="nc" id="L38">        String name = (String) jsonObjectProject.get(&quot;name&quot;);</span>
+<span class="nc" id="L39">        List&lt;Issue&gt; issues =  getOpenIssuesForProject(jsonObjectProject);</span>
+<span class="nc" id="L40">        int openIssuesCount = jsonObjectProject.getInt(&quot;open_issues_count&quot;);</span>
+<span class="nc" id="L41">        String htmlUrl = (String) jsonObjectProject.get(&quot;html_url&quot;);</span>
+<span class="nc" id="L42">        return new OnlyIssueProject(id, name, issues, openIssuesCount, htmlUrl);</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.1.201405082137</span></div></body></html>

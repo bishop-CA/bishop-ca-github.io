@@ -47,7 +47,7 @@ public class ProjectHandler implements Route {
 <span class="nc" id="L47">        return projects;</span>
     }
 
-    private Project createProjectFromJsonObject(final JSONObject jsonObjectProject) throws JSONException, IOException {
+    protected Project createProjectFromJsonObject(final JSONObject jsonObjectProject) throws JSONException, IOException {
 <span class="nc" id="L51">        String id = String.valueOf(jsonObjectProject.get(&quot;id&quot;));</span>
 <span class="nc" id="L52">        String name = (String) jsonObjectProject.get(&quot;name&quot;);</span>
 <span class="nc" id="L53">        List&lt;Contributor&gt; contributors = getContributorsForProject(jsonObjectProject);</span>
@@ -61,7 +61,7 @@ public class ProjectHandler implements Route {
 <span class="nc" id="L61">        return new Project(id, name, contributors, languages, branches, issues, openIssuesCount, htmlUrl, badges);</span>
     }
 
-    private List&lt;Issue&gt; getOpenIssuesForProject(final JSONObject jsonObjectProject) throws IOException {
+    protected List&lt;Issue&gt; getOpenIssuesForProject(final JSONObject jsonObjectProject) throws IOException {
 <span class="nc" id="L65">        String issuesUrl = jsonObjectProject.getString(&quot;issues_url&quot;);</span>
 <span class="nc" id="L66">        int index = issuesUrl.indexOf(&quot;{&quot;);</span>
 <span class="nc" id="L67">        String newUrl = issuesUrl.substring(0, index);</span>
@@ -217,7 +217,7 @@ public class ProjectHandler implements Route {
 <span class="nc" id="L217">        return languages;</span>
     }
 
-    private JSONArray getProjectsJsonArray() throws IOException, JSONException {
+    protected JSONArray getProjectsJsonArray() throws IOException, JSONException {
 <span class="nc" id="L221">        String url = &quot;https://api.github.com/user/repos?access_token=&quot; + githubToken;</span>
 <span class="nc" id="L222">        URL obj = new URL(url);</span>
 <span class="nc" id="L223">        HttpURLConnection con = (HttpURLConnection) obj.openConnection();</span>
